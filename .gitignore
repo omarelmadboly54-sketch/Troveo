@@ -1,0 +1,27 @@
+# Environment variables and secrets
+Backend/app.env
+Frontend/.env
+Frontend/.env.local
+
+
+# Go
+/backend/bin/
+/backend/tmp/
+
+# Frontend dependencies
+Frontend/node_modules/
+Frontend/dist/
+
+# Build artifacts
+*.exe
+*.out
+
+# IDE
+.vscode/
+.idea/
+
+# OS
+.DS_Store
+Thumbs.db
+
+justfile
