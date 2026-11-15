@@ -57,21 +57,21 @@ func (r *userRepository)DeleteUserByID(UserID int64)error{
 }
 
 func (r *userRepository)GetAll(page int,limit int,accountType string)([]models.User,error){
-	var user []models.User
+	var users []models.User
 
 	offset:=(page-1)*limit
 
-	query:=r.db.Model(&user).Where("id > ?",1)
+	query:=r.db.Model(&users).Where("id > ?",1)
 
 	if accountType!=""{
 		query=query.Where("account_type=?",accountType)
 	}
-	result:=query.Offset(offset).Limit(limit).Find(&user)
+	result:=query.Offset(offset).Limit(limit).Find(&users)
 	if result.Error!=nil{
 		return []models.User{},result.Error
 	}
 
-	return user,nil
+	return users,nil
 }
 
 func (r *userRepository)UpdateUserStatus(UserID int64,IsActive bool)error{

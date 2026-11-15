@@ -23,15 +23,15 @@ func (r *addressRepository) CreateAddress(address *models.Address) error{
 
 
 func (r *addressRepository)GetAll(UserID int64)([]models.Address,error){
-	var address []models.Address
+	var addresses []models.Address
 
-	result:=r.db.Where("user_id=?",UserID).Find(&address)
+	result:=r.db.Where("user_id=?",UserID).Find(&addresses)
 
 	if result.Error!=nil{
 		return []models.Address{},result.Error
 	}
 
-	return address,nil
+	return addresses,nil
 }
 
 func (r *addressRepository)DeleteAddressByID(ID,UserID int64)error{
