@@ -13,14 +13,16 @@ var (
 type Payload struct {
 	UserID			int64		`json:"user_id"`
 	Role			string		`json:"role"`
+	AccountType		string		`json:"account_type"`
 	IssuedAt		time.Time	`json:"issued_at"`
 	ExpiredAt		time.Time	`json:"expired_at"`
 }
 
-func NewPayloadToken(UserID int64,Role string,duration time.Duration)(*Payload,error){
+func NewPayloadToken(UserID int64,Role string,AccountType string,duration time.Duration)(*Payload,error){
 	paylaod:=&Payload{
 		UserID: UserID,
 		Role: Role,
+		AccountType: AccountType,
 		IssuedAt: time.Now(),
 		ExpiredAt: time.Now().Add(duration),
 	}

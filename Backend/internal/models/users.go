@@ -12,5 +12,7 @@ type User struct {
 	AccountType string 		`gorm:"not null" json:"account_type"`
 	CreatedAt   time.Time	`gorm:"autoCreateTime" json:"-"`
 	UpdatedAt	time.Time	`gorm:"autoUpdateTime" json:"-"`
+	IsActive	bool		`gorm:"not null" json:"is_active"`
 }
+
 
