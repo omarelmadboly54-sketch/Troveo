@@ -22,8 +22,8 @@ func NewJwtMaker(secretKey string) (Maker, error) {
 	return &JWTMaker{secretKey: secretKey},nil
 }
 
-func(maker *JWTMaker) CreateToken(UserID int64, Role string, duration time.Duration)(string,error){
-	payload,err:=NewPayloadToken(UserID,Role,duration)
+func(maker *JWTMaker) CreateToken(UserID int64, Role string,AccountType string ,duration time.Duration)(string,error){
+	payload,err:=NewPayloadToken(UserID,Role,AccountType,duration)
 	if err!=nil{
 		return "",err
 	}
@@ -31,6 +31,7 @@ func(maker *JWTMaker) CreateToken(UserID int64, Role string, duration time.Durat
 	token:=jwt.NewWithClaims(jwt.SigningMethodHS256,jwt.MapClaims{
 		"user_id":payload.UserID,
 		"role":payload.Role,
+        "account_type":payload.AccountType,
 		"iat":payload.IssuedAt.Unix(),
 		"exp":payload.ExpiredAt.Unix(),
 	})
@@ -71,6 +72,12 @@ func (maker *JWTMaker) VerifyToken(tokenString string) (*Payload, error) {
         return nil, ErrInvalidToken
     }
 
+    accountType,ok:=claims["account_type"].(string)
+    if !ok || accountType ==""{
+        return nil,ErrInvalidToken
+    }
+
+
     userIDNumber, ok := claims["user_id"].(json.Number)
     if !ok {
         return nil, ErrInvalidToken
@@ -89,6 +96,7 @@ func (maker *JWTMaker) VerifyToken(tokenString string) (*Payload, error) {
     return &Payload{
         UserID:    userID,
         Role:     role,
+        AccountType: accountType,
         ExpiredAt: exp.Time,
     }, nil
 }
