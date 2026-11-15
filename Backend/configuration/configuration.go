@@ -14,7 +14,7 @@ func InitPostgres() (*gorm.DB,models.Configuration,error) {
 		return nil,models.Configuration{},err
 	}
 
-	db, err := gorm.Open(postgres.Open(config.DBSource), &gorm.Config{})
+	db, err := gorm.Open(postgres.Open(config.DBSource), &gorm.Config{TranslateError: true})
 	if err!=nil{
 		return nil,models.Configuration{},err
 	}

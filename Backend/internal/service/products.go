@@ -5,6 +5,7 @@ import (
 	"Trovero/Backend/internal/models"
 	"Trovero/Backend/internal/repository"
 	"context"
+	"errors"
 	"io"
 	"log"
 	"mime/multipart"
@@ -12,6 +13,7 @@ import (
 
 	"github.com/cloudinary/cloudinary-go"
 	"github.com/cloudinary/cloudinary-go/api/uploader"
+	"gorm.io/gorm"
 )
 
 type productService struct {
@@ -21,6 +23,12 @@ type productService struct {
 
 type ProductService interface {
 	CreateProduct(product *models.Product, fileHeader *multipart.FileHeader, UserID int64) error
+	GetAll(page,limit int)([]models.Product,error)
+	GetProductByID(id int64)(*models.Product,error)
+	GetMyProducts(UserID int64,page,limit int)([]models.Product,error)
+	GetMyProduct(id,userID int64)(*models.Product,error)
+	DeleteProductByID(id,UserID int64)error
+	GetProductsByCategory(CategoryID int64)([]models.Product,error)
 }
 
 func NewProductService(productRepository repository.ProductRepository,cld *cloudinary.Cloudinary) ProductService {
@@ -83,6 +91,7 @@ func (s *productService) CreateProduct(product *models.Product, fileHeader *mult
 	}
 
 	product.Photo = uploadResult.SecureURL
+	product.PhotoPublicID=uploadResult.PublicID
 	product.SellerID = UserID
 
 	err = s.productRepository.CreateProduct(product)
@@ -103,4 +112,68 @@ func (s *productService) CreateProduct(product *models.Product, fileHeader *mult
 	}
 
 	return nil
+}
+
+
+func (s *productService)GetAll(page,limit int)([]models.Product,error){
+	return s.productRepository.GetAll(page,limit)
+}
+
+
+func (s *productService)GetProductByID(id int64)(*models.Product,error){
+	product,err:=s.productRepository.GetProductByID(id)
+	if err!=nil{
+		if errors.Is(err,gorm.ErrRecordNotFound){
+			return nil,apperrors.ErrProductNotFound
+		}
+		return nil,err
+	}
+
+	return product,nil
+}
+
+func (s *productService)GetMyProducts(UserID int64,page,limit int)([]models.Product,error){
+	return s.productRepository.GetMyProducts(UserID,page,limit)
+}
+
+
+func (s *productService)GetMyProduct(id,userID int64)(*models.Product,error){
+	product,err:=s.productRepository.GetMyProduct(id,userID)
+	if err!=nil{
+		if errors.Is(err,gorm.ErrRecordNotFound){
+			return nil,apperrors.ErrProductNotFound
+		}
+		return nil,err
+	}
+
+	return product,nil
+}
+
+func (s *productService)DeleteProductByID(id,UserID int64)error{
+	product,err:=s.productRepository.GetMyProduct(id,UserID)
+	if err!=nil{
+		if errors.Is(err,gorm.ErrRecordNotFound){
+			return apperrors.ErrProductNotFound
+		}
+		return err
+	}
+
+	ctx:=context.Background()
+	_,err=s.cld.Upload.Destroy(ctx,uploader.DestroyParams{
+		PublicID: product.PhotoPublicID,
+	})
+	if err!=nil{
+		return err
+	}
+
+	err=s.productRepository.DeleteProductByID(id,UserID)
+	if err!=nil{
+		return err
+	}
+	return nil
+
+}
+
+func (s *productService)GetProductsByCategory(CategoryID int64)([]models.Product,error){
+	return s.productRepository.GetProductsByCategory(CategoryID)
 }
