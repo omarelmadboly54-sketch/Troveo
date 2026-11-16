@@ -18,7 +18,7 @@ func NewUserRepository(db *gorm.DB) repository.UserRepository {
 }
 
 func (r *userRepository) CreateUser(user *models.User) error {
-	return r.db.Create(&user).Error
+	return r.db.Create(user).Error
 }
 
 func (r *userRepository) GetUserByEmail(email string) (*models.User, error) {
@@ -56,13 +56,33 @@ func (r *userRepository)DeleteUserByID(UserID int64)error{
 	return nil
 }
 
-func (r *userRepository)GetAll()([]models.User,error){
+func (r *userRepository)GetAll(page int,limit int,accountType string)([]models.User,error){
 	var users []models.User
 
-	result:=r.db.Where("id > ?",1).Find(&users)
+	offset:=(page-1)*limit
+
+	query:=r.db.Model(&users).Where("id > ?",1)
+
+	if accountType!=""{
+		query=query.Where("account_type=?",accountType)
+	}
+	result:=query.Offset(offset).Limit(limit).Find(&users)
 	if result.Error!=nil{
 		return []models.User{},result.Error
 	}
+
 	return users,nil
 }
 
+func (r *userRepository)UpdateUserStatus(UserID int64,IsActive bool)error{
+	var user models.User
+
+	result:=r.db.Model(&user).Where("id=?",UserID).Update("is_active",IsActive)
+	if result.Error!=nil{
+		return result.Error
+	}
+	if result.RowsAffected==0{
+		return gorm.ErrRecordNotFound
+	}
+	return nil
+}

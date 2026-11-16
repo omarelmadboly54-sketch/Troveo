@@ -15,6 +15,9 @@ type LoginReq struct{
 	Password		string		`json:"password" binding:"required"`
 }
 
+type UpdateUserStatusReq struct{
+	IsActive					*bool		`json:"is_active" binding:"required"`
+}
 
 func (c *CreateUserReq) ToUser() models.User{
 	return models.User{

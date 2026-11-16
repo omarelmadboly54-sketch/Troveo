@@ -36,6 +36,7 @@ func(ctl *userController)RegisterRoutes(g *gin.RouterGroup){
 	g.GET("/users/:id",middleware.AuthMiddleware(ctl.tokenMaker),middleware.RestrictTo("admin"),ctl.GetUserByID)
 	g.DELETE("/users/:id",middleware.AuthMiddleware(ctl.tokenMaker),middleware.RestrictTo("admin"),ctl.DeleteUserByID)
 	g.GET("/users",middleware.AuthMiddleware(ctl.tokenMaker),middleware.RestrictTo("admin"),ctl.GetAll)
+	g.PATCH("/users/:id",middleware.AuthMiddleware(ctl.tokenMaker),middleware.RestrictTo("admin"),ctl.UpdateUserStatus)
 }
 
 func(ctl *userController)CreateUser(g *gin.Context){
@@ -62,7 +63,7 @@ func(ctl *userController)CreateUser(g *gin.Context){
 	}
 
 	g.JSON(http.StatusCreated,gin.H{
-		"message":"Account created successfully",
+		"message":"Created successfully",
 	})
 }
 
@@ -77,13 +78,14 @@ func(ctl *userController)Login(g *gin.Context){
 
 	accessToken,err:=ctl.UserService.Login(req.Email,req.Password)
 	if err!=nil{
-		if errors.Is(err,apperrors.ErrInvalidCredentials){
-			g.JSON(http.StatusUnauthorized,gin.H{"error":apperrors.ErrInvalidCredentials.Error(),
-		})
-		return
+		switch{
+		case errors.Is(err,apperrors.ErrInvalidCredentials):
+			g.JSON(http.StatusUnauthorized,gin.H{"error":apperrors.ErrInvalidCredentials.Error()})
+		case errors.Is(err,apperrors.ErrUserNotAllowed):
+			g.JSON(http.StatusForbidden,gin.H{"error":apperrors.ErrUserNotAllowed.Error()})
+		default:
+			g.JSON(http.StatusInternalServerError,gin.H{"error":err.Error()})	
 		}
-		g.JSON(http.StatusInternalServerError,gin.H{"error":err.Error(),
-		})
 		return
 	}
 
@@ -138,13 +140,28 @@ func(ctl *userController)DeleteUserByID(g *gin.Context){
 	return
 	}
 	g.JSON(http.StatusOK,gin.H{
-		"message":"Account deleted Successfully",
+		"message":"Deleted successfully",
 	})
 }
 
 
 func(ctl *userController)GetAll(g *gin.Context){
-	users,err:=ctl.UserService.GetAll()
+
+	page, err := strconv.Atoi(g.DefaultQuery("page", "1"))
+	if err != nil || page < 1 {
+		g.JSON(http.StatusBadRequest, gin.H{"error": "invalid page"})
+		return
+	}
+
+	limit, err := strconv.Atoi(g.DefaultQuery("limit", "10"))
+	if err != nil || limit < 1 {
+		g.JSON(http.StatusBadRequest, gin.H{"error": "invalid limit"})
+		return
+	}
+
+	accountType := g.Query("account_type")
+
+	users,err:=ctl.UserService.GetAll(page,limit,accountType)
 	if err!=nil{
 		g.JSON(http.StatusInternalServerError,gin.H{"error":err.Error(),
 	})
@@ -155,3 +172,38 @@ func(ctl *userController)GetAll(g *gin.Context){
 	})
 
 }
+
+
+func(ctl *userController)UpdateUserStatus(g *gin.Context){
+	id,err:=strconv.ParseInt(g.Param("id"),10,64)
+	if err!=nil{
+		g.JSON(http.StatusBadRequest,gin.H{"error":err.Error(),
+	})
+	return
+	}
+	
+	req:=presenters.UpdateUserStatusReq{}
+
+	if err:=g.ShouldBindJSON(&req);err!=nil{
+		g.JSON(http.StatusBadRequest,gin.H{"error":err.Error(),
+	})
+	return
+	}
+
+	err=ctl.UserService.UpdateUserStatus(id,*req.IsActive)
+	if err!=nil{
+		if errors.Is(err,apperrors.ErrUserNotFound){
+			g.JSON(http.StatusNotFound,gin.H{"error":apperrors.ErrUserNotFound.Error(),
+		})
+		return
+		}
+		g.JSON(http.StatusInternalServerError,gin.H{"error":err.Error(),
+	})
+	return
+	}
+	g.JSON(http.StatusOK,gin.H{
+		"message":"Updated successfully",
+	})
+
+}
+

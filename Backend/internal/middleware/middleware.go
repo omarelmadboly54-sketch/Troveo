@@ -59,40 +59,76 @@ func GetTokenPayload(g *gin.Context) (*tokens.Payload, bool) {
 	return payload, ok
 }
 
-
 func RestrictTo(allowedRoles ...string) gin.HandlerFunc {
+	return func(ctx *gin.Context) {
+
+		val, exists := ctx.Get(authorizationPayloadKey)
+		if !exists {
+			err := errors.New("authorization payload not found")
+			ctx.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": err.Error()})
+			return
+		}
+
+		payload, ok := val.(*tokens.Payload)
+		if !ok {
+			err := errors.New("invalid authorization payload type")
+			ctx.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+			return
+		}
+
+		isAllowed := false
+		for _, role := range allowedRoles {
+			if payload.Role == role {
+				isAllowed = true
+				break
+			}
+		}
+
+		if !isAllowed {
+			err := errors.New("permission denied: insufficient permissions")
+			ctx.AbortWithStatusJSON(http.StatusForbidden, gin.H{"error": err.Error()})
+			return
+		}
+
+		ctx.Next()
+	}
+}
+
+
+func RestrictAccountType(allowedTypes ...string) gin.HandlerFunc {
     return func(ctx *gin.Context) {
-       
         val, exists := ctx.Get(authorizationPayloadKey)
         if !exists {
-            err := errors.New("authorization payload not found")
-            ctx.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": err.Error()})
+            ctx.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{
+                "error": "authorization payload not found",
+            })
             return
         }
 
-        
         payload, ok := val.(*tokens.Payload)
         if !ok {
-            err := errors.New("invalid authorization payload type")
-            ctx.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+            ctx.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{
+                "error": "invalid authorization payload type",
+            })
             return
         }
 
-   
         isAllowed := false
-        for _, role := range allowedRoles {
-            if payload.Role == role {
+
+        for _, accountType := range allowedTypes {
+            if payload.AccountType == accountType {
                 isAllowed = true
                 break
             }
         }
 
         if !isAllowed {
-            err := errors.New("permission denied: insufficient permissions")
-            ctx.AbortWithStatusJSON(http.StatusForbidden, gin.H{"error": err.Error()})
+            ctx.AbortWithStatusJSON(http.StatusForbidden, gin.H{
+                "error": "permission denied: insufficient permissions",
+            })
             return
         }
 
         ctx.Next()
-	}
-}	
+    }
+}

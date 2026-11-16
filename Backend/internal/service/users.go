@@ -23,8 +23,9 @@ type UserService interface{
 	CreateUser(user *models.User)error
 	Login(email,password string)(string,error)
 	GetUserByID(UserID int64)(*models.User,error)
-	GetAll()([]models.User,error)
+	GetAll(page int,limit int,accountType string)([]models.User,error)
 	DeleteUserByID(UserID int64)error
+	UpdateUserStatus(UserID int64,IsActive bool)error
 }
 
 func NewUserService (UserRepository repository.UserRepository,tokenMaker tokens.Maker,tokenDuration time.Duration)UserService{
@@ -71,7 +72,11 @@ func(s *userService)Login(email,password string)(string,error){
 		return "",apperrors.ErrInvalidCredentials
 	}
 
-	accessToken,err:=s.tokenMaker.CreateToken(exisiting.ID,exisiting.Role,s.tokenDuration)
+	if exisiting.IsActive==false{
+		return "",apperrors.ErrUserNotAllowed
+	}
+
+	accessToken,err:=s.tokenMaker.CreateToken(exisiting.ID,exisiting.Role,exisiting.AccountType,s.tokenDuration)
 	if err!=nil{
 		return "",fmt.Errorf("failed to generate tokens:%v",err)
 	}
@@ -104,6 +109,19 @@ func(s *userService)DeleteUserByID(UserID int64)error{
 }
 
 
-func(s *userService)GetAll()([]models.User,error){
-	return s.UserRepository.GetAll()
+func(s *userService)GetAll(page int,limit int,accountType string)([]models.User,error){
+	return s.UserRepository.GetAll(page,limit,accountType)
+}
+
+
+func(s *userService)UpdateUserStatus(UserID int64,IsActive bool)error{
+	err:=s.UserRepository.UpdateUserStatus(UserID,IsActive)
+	if err!=nil{
+		if errors.Is(err,gorm.ErrRecordNotFound){
+			return apperrors.ErrUserNotFound
+		}
+		return err
+	}
+	return nil
+
 }
