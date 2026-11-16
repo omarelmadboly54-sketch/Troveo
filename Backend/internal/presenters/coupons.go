@@ -14,6 +14,10 @@ type CreateCouponReq struct {
 	IsActive		   *bool		`json:"is_active" binding:"required" `  		
 }
 
+type UpdateCouponStatusReq struct{
+	IsActive			*bool		`json:"is_active" binding:"required"`		
+}
+
 func(c *CreateCouponReq) ToCoupon()models.Coupon{
 	return models.Coupon{
 		Code: c.Code,

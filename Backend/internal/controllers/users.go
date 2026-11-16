@@ -63,7 +63,7 @@ func(ctl *userController)CreateUser(g *gin.Context){
 	}
 
 	g.JSON(http.StatusCreated,gin.H{
-		"message":"Account created successfully",
+		"message":"Created successfully",
 	})
 }
 
@@ -140,7 +140,7 @@ func(ctl *userController)DeleteUserByID(g *gin.Context){
 	return
 	}
 	g.JSON(http.StatusOK,gin.H{
-		"message":"Account deleted Successfully",
+		"message":"Deleted successfully",
 	})
 }
 
@@ -202,7 +202,7 @@ func(ctl *userController)UpdateUserStatus(g *gin.Context){
 	return
 	}
 	g.JSON(http.StatusOK,gin.H{
-		"message":"Account status updated successfully",
+		"message":"Updated successfully",
 	})
 
 }

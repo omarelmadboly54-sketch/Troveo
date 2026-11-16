@@ -67,7 +67,7 @@ func(ctl *addressController)CreateAddress(g *gin.Context){
 	}
 
 	g.JSON(http.StatusCreated,gin.H{
-		"message":"Address created successfully",
+		"message":"Created successfully",
 	})
 }
 
