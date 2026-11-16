@@ -78,7 +78,7 @@ func (ctl *productController) CreateProduct(g *gin.Context) {
 	}
 
 	g.JSON(http.StatusCreated, gin.H{
-		"message": "Created Succesfully",
+		"message": "Created succesfully",
 	})
 
 }

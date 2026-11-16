@@ -73,7 +73,13 @@ func main() {
 	couponService:=service.NewCouponService(couponRepository)
 	couponController:=controllers.NewCouponController(couponService,tokenMaker)
 	couponController.RegisterRoutes(r.Group("/api"))
+	//UserCoupon
+	usercouponRepository:=postgres.NewUserCouponRepository(db)
+	usercouponService:=service.NewUserCouponService(usercouponRepository,userService,couponService)
+	usercouponController:=controllers.NewUserCouponController(usercouponService,tokenMaker)
+	usercouponController.RegisterRoutes(r.Group("/api"))
 
+	
 	if err := r.Run(config.ServerAddress); err != nil {
 		log.Fatalf("failed to load serve:%v", err)
 	}
